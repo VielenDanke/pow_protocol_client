@@ -38,7 +38,7 @@ func (dc *DefaultClient) SendRequest(address string) ([]byte, error) {
 	if connErr != nil {
 		return nil, connErr
 	}
-	handshakeErr := dc.doHandshake(conn)
+	handshakeErr := dc.DoHandshake(conn)
 	if handshakeErr != nil {
 		log.Printf("ERROR: handshake failed - %s\n", handshakeErr)
 		if connErr = conn.Close(); connErr != nil {
@@ -49,7 +49,7 @@ func (dc *DefaultClient) SendRequest(address string) ([]byte, error) {
 	return []byte{}, nil
 }
 
-func (dc *DefaultClient) doHandshake(conn net.Conn) error {
+func (dc *DefaultClient) DoHandshake(conn net.Conn) error {
 	var readErr, writeErr error
 	var readLen int
 	var serverResponseArr []string
@@ -117,4 +117,24 @@ func (dc *DefaultClient) doHandshake(conn net.Conn) error {
 	}
 	log.Printf("INFO: successful handshake, wisdom words - %s\n", buff[:readLen])
 	return nil
+}
+
+func (dc *DefaultClient) SetNonceNumber(number int) {
+	dc.nonceGeneratorNum = number
+}
+
+func (dc *DefaultClient) SetDeadlineToRead(deadline time.Duration) {
+	dc.deadlineToRead = deadline
+}
+
+func (dc *DefaultClient) SetDeadlineToWrite(deadline time.Duration) {
+	dc.deadlineToWrite = deadline
+}
+
+func (dc *DefaultClient) SetCommonDeadline(deadline time.Duration) {
+	dc.commonDeadline = deadline
+}
+
+func (dc *DefaultClient) SetNetworkType(networkType string) {
+	dc.networkType = networkType
 }
