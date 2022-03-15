@@ -7,7 +7,7 @@ type Credentials struct {
 }
 
 func BuildCredentials(username, password string) Credentials {
-	return Credentials{username: username, password: username}
+	return Credentials{username: username, password: password}
 }
 
 func BuildCredentialsFromEnv() Credentials {

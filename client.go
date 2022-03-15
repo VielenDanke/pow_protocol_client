@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type SetClientOptions interface {
+type ClientOptions interface {
 	SetNonceNumber(number int)
 	SetDeadlineToRead(deadline time.Duration)
 	SetDeadlineToWrite(deadline time.Duration)
@@ -16,5 +16,5 @@ type SetClientOptions interface {
 type Client interface {
 	DoHandshake(conn net.Conn) error
 	SendRequest(address string) ([]byte, error)
-	SetClientOptions
+	ClientOptions
 }
