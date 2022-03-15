@@ -10,45 +10,22 @@ import (
 	"time"
 )
 
-type ClientOption func(c Client)
-
-func WithReadDeadline(deadline time.Duration) ClientOption {
-	return func(c Client) {
-		client := c.(*DefaultClient)
-		client.deadlineToRead = deadline
-	}
-}
-
-func WithWriteDeadline(deadline time.Duration) ClientOption {
-	return func(c Client) {
-		client := c.(*DefaultClient)
-		client.deadlineToWrite = deadline
-	}
-}
-
-func WithCommonDeadline(commonDeadline time.Duration) ClientOption {
-	return func(c Client) {
-		client := c.(*DefaultClient)
-		client.commonDeadline = commonDeadline
-	}
-}
-
-func WithNetworkType(networkType string) ClientOption {
-	return func(c Client) {
-		client := c.(*DefaultClient)
-		client.networkType = networkType
-	}
-}
-
 type DefaultClient struct {
-	deadlineToRead  time.Duration
-	deadlineToWrite time.Duration
-	commonDeadline  time.Duration
-	networkType     string
+	deadlineToRead    time.Duration
+	credentials       Credentials
+	deadlineToWrite   time.Duration
+	commonDeadline    time.Duration
+	nonceGeneratorNum int
+	networkType       string
 }
 
-func NewDefaultClient(opts ...ClientOption) Client {
-	defaultClient := &DefaultClient{commonDeadline: 500 * time.Millisecond, networkType: "tcp"}
+func NewDefaultClient(credentials Credentials, opts ...ClientOption) Client {
+	defaultClient := &DefaultClient{
+		commonDeadline:    500 * time.Millisecond,
+		networkType:       "tcp",
+		credentials:       credentials,
+		nonceGeneratorNum: 18,
+	}
 
 	for _, v := range opts {
 		v(defaultClient)
@@ -77,9 +54,10 @@ func (dc *DefaultClient) doHandshake(conn net.Conn) error {
 	var readLen int
 	var serverResponseArr []string
 	var serverProof string
-	// TODO: how to add user to request
-	clientNonce := randomStringGenerator(18)
-	_, writeErr = conn.Write([]byte(fmt.Sprintf("%s,%s", "user", clientNonce)))
+
+	clientNonce := randomStringGenerator(dc.nonceGeneratorNum)
+
+	_, writeErr = conn.Write([]byte(fmt.Sprintf("%s,%s", dc.credentials.username, clientNonce)))
 	if writeErr != nil {
 		log.Println("ERROR: cannot write to connection - return")
 		return writeErr
@@ -103,8 +81,7 @@ func (dc *DefaultClient) doHandshake(conn net.Conn) error {
 	serverNonce := serverResponseArr[0]
 	salt := serverResponseArr[1]
 
-	// TODO: how to add password to request
-	hmacGen := hmacGenerator("password", salt, serverNonce, iterationCount)
+	hmacGen := hmacGenerator(dc.credentials.password, salt, serverNonce, iterationCount)
 
 	_, writeErr = conn.Write([]byte(fmt.Sprintf("%s,%s", serverNonce, hmacGen)))
 
@@ -118,7 +95,7 @@ func (dc *DefaultClient) doHandshake(conn net.Conn) error {
 		log.Println("ERROR: cannot read from connection - return")
 		return readErr
 	}
-	clientHmacGen := hmacGenerator("password", salt, clientNonce, iterationCount)
+	clientHmacGen := hmacGenerator(dc.credentials.password, salt, clientNonce, iterationCount)
 
 	serverProof, buff = string(buff[:readLen]), buff[readLen+1:]
 

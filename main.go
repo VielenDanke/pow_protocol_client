@@ -3,7 +3,7 @@ package main
 import "log"
 
 func main() {
-	defaultClient := NewDefaultClient()
+	defaultClient := NewDefaultClient(BuildCredentials("user", "password"))
 	for {
 		_, err := defaultClient.SendRequest("localhost:8080")
 
