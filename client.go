@@ -14,7 +14,7 @@ type ClientOptions interface {
 }
 
 type Client interface {
-	DoHandshake(conn net.Conn) error
+	DoHandshake(conn net.Conn) ([]byte, error)
 	SendRequest(address string) ([]byte, error)
 	ClientOptions
 }

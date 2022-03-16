@@ -38,7 +38,7 @@ func (dc *DefaultClient) SendRequest(address string) ([]byte, error) {
 	if connErr != nil {
 		return nil, connErr
 	}
-	handshakeErr := dc.DoHandshake(conn)
+	wisdomWords, handshakeErr := dc.DoHandshake(conn)
 	if handshakeErr != nil {
 		log.Printf("ERROR: handshake failed - %s\n", handshakeErr)
 		if connErr = conn.Close(); connErr != nil {
@@ -46,10 +46,10 @@ func (dc *DefaultClient) SendRequest(address string) ([]byte, error) {
 		}
 		return nil, handshakeErr
 	}
-	return []byte{}, nil
+	return wisdomWords, nil
 }
 
-func (dc *DefaultClient) DoHandshake(conn net.Conn) error {
+func (dc *DefaultClient) DoHandshake(conn net.Conn) ([]byte, error) {
 	var readErr, writeErr error
 	var readLen int
 	var serverResponseArr []string
@@ -60,7 +60,7 @@ func (dc *DefaultClient) DoHandshake(conn net.Conn) error {
 	_, writeErr = conn.Write([]byte(fmt.Sprintf("%s,%s", dc.credentials.username, clientNonce)))
 	if writeErr != nil {
 		log.Println("ERROR: cannot write to connection - return")
-		return writeErr
+		return nil, writeErr
 	}
 	buff := make([]byte, 1024)
 
@@ -68,7 +68,7 @@ func (dc *DefaultClient) DoHandshake(conn net.Conn) error {
 
 	if readErr != nil {
 		log.Println("ERROR: cannot read from connection - return")
-		return readErr
+		return nil, readErr
 	}
 	serverResponseArr, buff = strings.Split(string(buff[:readLen]), ","), buff[readLen+1:]
 
@@ -76,7 +76,7 @@ func (dc *DefaultClient) DoHandshake(conn net.Conn) error {
 
 	if convErr != nil {
 		log.Printf("ERROR: server responded with incorrect type of iteration count - return")
-		return convErr
+		return nil, convErr
 	}
 	serverNonce := serverResponseArr[0]
 	salt := serverResponseArr[1]
@@ -87,13 +87,13 @@ func (dc *DefaultClient) DoHandshake(conn net.Conn) error {
 
 	if writeErr != nil {
 		log.Println("ERROR: cannot write to connection - return")
-		return writeErr
+		return nil, writeErr
 	}
 	readLen, readErr = conn.Read(buff)
 
 	if readErr != nil {
 		log.Println("ERROR: cannot read from connection - return")
-		return readErr
+		return nil, readErr
 	}
 	clientHmacGen := hmacGenerator(dc.credentials.password, salt, clientNonce, iterationCount)
 
@@ -101,22 +101,23 @@ func (dc *DefaultClient) DoHandshake(conn net.Conn) error {
 
 	if clientHmacGen != serverProof {
 		log.Println("ERROR: proof is not correct - return")
-		return errors.New("server proof is not correct")
+		return nil, errors.New("server proof is not correct")
 	}
 	_, writeErr = conn.Write([]byte("success"))
 
 	if writeErr != nil {
 		log.Println("ERROR: cannot write to connection - return")
-		return writeErr
+		return nil, writeErr
 	}
 	readLen, readErr = conn.Read(buff)
 
 	if readErr != nil {
 		log.Println("ERROR: cannot read from connection - return")
-		return readErr
+		return nil, readErr
 	}
-	log.Printf("INFO: successful handshake, wisdom words - %s\n", buff[:readLen])
-	return nil
+	wisdomWords := buff[:readLen]
+	log.Printf("INFO: successful handshake, wisdom words - %s\n", wisdomWords)
+	return wisdomWords, nil
 }
 
 func (dc *DefaultClient) SetNonceNumber(number int) {
