@@ -53,7 +53,7 @@ func (dc *DefaultClient) DoHandshake(conn net.Conn) ([]byte, error) {
 	var readErr, writeErr error
 	var readLen int
 	var serverResponseArr []string
-	var serverProof string
+	var serverProofNonce []string
 
 	clientNonce := randomStringGenerator(dc.nonceGeneratorNum)
 
@@ -97,11 +97,18 @@ func (dc *DefaultClient) DoHandshake(conn net.Conn) ([]byte, error) {
 	}
 	clientHmacGen := hmacGenerator(dc.credentials.password, salt, clientNonce, iterationCount)
 
-	serverProof, buff = string(buff[:readLen]), buff[readLen+1:]
+	serverProofNonce, buff = strings.Split(string(buff[:readLen]), ","), buff[readLen+1:]
+
+	serverProof := serverProofNonce[1]
+	serverSendClientNonce := serverProofNonce[0]
 
 	if clientHmacGen != serverProof {
 		log.Println("ERROR: proof is not correct - return")
 		return nil, errors.New("server proof is not correct")
+	}
+	if clientNonce != serverSendClientNonce {
+		log.Println("ERROR: nonce is not correct - return")
+		return nil, errors.New("client nonce is not correct")
 	}
 	_, writeErr = conn.Write([]byte("success"))
 
@@ -115,9 +122,7 @@ func (dc *DefaultClient) DoHandshake(conn net.Conn) ([]byte, error) {
 		log.Println("ERROR: cannot read from connection - return")
 		return nil, readErr
 	}
-	wisdomWords := buff[:readLen]
-	log.Printf("INFO: successful handshake, wisdom words - %s\n", wisdomWords)
-	return wisdomWords, nil
+	return buff[:readLen], nil
 }
 
 func (dc *DefaultClient) SetNonceNumber(number int) {
