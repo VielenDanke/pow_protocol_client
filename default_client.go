@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+var defaultNonceNumber = 18
+var defaultNetworkType = "tcp"
+var defaultCommonDeadline = 500 * time.Millisecond
+
 type DefaultClient struct {
 	deadlineToRead    time.Duration
 	credentials       Credentials
@@ -21,10 +25,10 @@ type DefaultClient struct {
 
 func NewDefaultClient(credentials Credentials, opts ...ClientOption) Client {
 	defaultClient := &DefaultClient{
-		commonDeadline:    500 * time.Millisecond,
-		networkType:       "tcp",
+		commonDeadline:    defaultCommonDeadline,
+		networkType:       defaultNetworkType,
 		credentials:       credentials,
-		nonceGeneratorNum: 18,
+		nonceGeneratorNum: defaultNonceNumber,
 	}
 
 	for _, v := range opts {
@@ -143,4 +147,24 @@ func (dc *DefaultClient) SetCommonDeadline(deadline time.Duration) {
 
 func (dc *DefaultClient) SetNetworkType(networkType string) {
 	dc.networkType = networkType
+}
+
+func (dc *DefaultClient) GetNetworkType() string {
+	return dc.networkType
+}
+
+func (dc *DefaultClient) GetNonceNumber() int {
+	return dc.nonceGeneratorNum
+}
+
+func (dc *DefaultClient) GetDeadlineToRead() time.Duration {
+	return dc.deadlineToRead
+}
+
+func (dc *DefaultClient) GetDeadlineToWrite() time.Duration {
+	return dc.deadlineToWrite
+}
+
+func (dc *DefaultClient) GetCommonDeadline() time.Duration {
+	return dc.commonDeadline
 }
