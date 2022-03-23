@@ -1,8 +1,9 @@
-package main
+package client
 
 import (
-	"errors"
 	"fmt"
+	"github.com/vielendanke/pow_protocol_client/credentials"
+	"github.com/vielendanke/pow_protocol_client/powalgo"
 	"log"
 	"net"
 	"strconv"
@@ -16,14 +17,14 @@ var defaultCommonDeadline = 500 * time.Millisecond
 
 type DefaultClient struct {
 	deadlineToRead    time.Duration
-	credentials       Credentials
+	credentials       credentials.Credentials
 	deadlineToWrite   time.Duration
 	commonDeadline    time.Duration
 	nonceGeneratorNum int
 	networkType       string
 }
 
-func NewDefaultClient(credentials Credentials, opts ...ClientOption) Client {
+func NewDefaultClient(credentials credentials.Credentials, opts ...ClientOption) Client {
 	defaultClient := &DefaultClient{
 		commonDeadline:    defaultCommonDeadline,
 		networkType:       defaultNetworkType,
@@ -57,11 +58,10 @@ func (dc *DefaultClient) DoHandshake(conn net.Conn) ([]byte, error) {
 	var readErr, writeErr error
 	var readLen int
 	var serverResponseArr []string
-	var serverProofNonce []string
 
-	clientNonce := randomStringGenerator(dc.nonceGeneratorNum)
+	clientNonce := powalgo.RandomStringGenerator(dc.nonceGeneratorNum)
 
-	_, writeErr = conn.Write([]byte(fmt.Sprintf("%s,%s", dc.credentials.username, clientNonce)))
+	_, writeErr = conn.Write([]byte(fmt.Sprintf("%s,%s", dc.credentials.GetUsername(), clientNonce)))
 	if writeErr != nil {
 		log.Println("ERROR: cannot write to connection - return")
 		return nil, writeErr
@@ -85,36 +85,9 @@ func (dc *DefaultClient) DoHandshake(conn net.Conn) ([]byte, error) {
 	serverNonce := serverResponseArr[0]
 	salt := serverResponseArr[1]
 
-	hmacGen := hmacGenerator(dc.credentials.password, salt, serverNonce, iterationCount)
+	hmacGen := powalgo.HMACGenerator(dc.credentials.GetPassword(), salt, serverNonce, iterationCount)
 
 	_, writeErr = conn.Write([]byte(fmt.Sprintf("%s,%s", serverNonce, hmacGen)))
-
-	if writeErr != nil {
-		log.Println("ERROR: cannot write to connection - return")
-		return nil, writeErr
-	}
-	readLen, readErr = conn.Read(buff)
-
-	if readErr != nil {
-		log.Println("ERROR: cannot read from connection - return")
-		return nil, readErr
-	}
-	clientHmacGen := hmacGenerator(dc.credentials.password, salt, clientNonce, iterationCount)
-
-	serverProofNonce, buff = strings.Split(string(buff[:readLen]), ","), buff[readLen+1:]
-
-	serverProof := serverProofNonce[1]
-	serverSendClientNonce := serverProofNonce[0]
-
-	if clientHmacGen != serverProof {
-		log.Println("ERROR: proof is not correct - return")
-		return nil, errors.New("server proof is not correct")
-	}
-	if clientNonce != serverSendClientNonce {
-		log.Println("ERROR: nonce is not correct - return")
-		return nil, errors.New("client nonce is not correct")
-	}
-	_, writeErr = conn.Write([]byte("success"))
 
 	if writeErr != nil {
 		log.Println("ERROR: cannot write to connection - return")

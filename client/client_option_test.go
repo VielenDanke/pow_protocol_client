@@ -1,15 +1,16 @@
-package main
+package client
 
 import (
 	"github.com/stretchr/testify/assert"
+	"github.com/vielendanke/pow_protocol_client/credentials"
 	"testing"
 	"time"
 )
 
-var credentials Credentials
+var creds credentials.Credentials
 
 func init() {
-	credentials, _ = BuildCredentials("username", "password")
+	creds, _ = credentials.BuildCredentials("username", "password")
 }
 
 func TestWithNetworkType(t *testing.T) {
@@ -17,7 +18,7 @@ func TestWithNetworkType(t *testing.T) {
 	networkType := "udp"
 
 	// when
-	cli := NewDefaultClient(credentials, WithNetworkType(networkType))
+	cli := NewDefaultClient(creds, WithNetworkType(networkType))
 
 	// then
 	assert.Equal(t, networkType, cli.GetNetworkType())
@@ -28,7 +29,7 @@ func TestWithCommonDeadline(t *testing.T) {
 	commonDeadline := 500 * time.Millisecond
 
 	// when
-	cli := NewDefaultClient(credentials, WithCommonDeadline(commonDeadline))
+	cli := NewDefaultClient(creds, WithCommonDeadline(commonDeadline))
 
 	// then
 	assert.Equal(t, commonDeadline, cli.GetCommonDeadline())
@@ -36,7 +37,7 @@ func TestWithCommonDeadline(t *testing.T) {
 
 func TestWithCommonDeadline_DefaultDeadline(t *testing.T) {
 	// when
-	cli := NewDefaultClient(credentials)
+	cli := NewDefaultClient(creds)
 
 	// then
 	assert.Equal(t, defaultCommonDeadline, cli.GetCommonDeadline())
@@ -47,7 +48,7 @@ func TestWithReadDeadline(t *testing.T) {
 	readDeadline := 500 * time.Millisecond
 
 	// when
-	cli := NewDefaultClient(credentials, WithReadDeadline(readDeadline))
+	cli := NewDefaultClient(creds, WithReadDeadline(readDeadline))
 
 	// then
 	assert.Equal(t, readDeadline, cli.GetDeadlineToRead())
@@ -58,7 +59,7 @@ func TestWithWriteDeadline(t *testing.T) {
 	writeDeadline := 500 * time.Millisecond
 
 	// when
-	cli := NewDefaultClient(credentials, WithWriteDeadline(writeDeadline))
+	cli := NewDefaultClient(creds, WithWriteDeadline(writeDeadline))
 
 	// then
 	assert.Equal(t, writeDeadline, cli.GetDeadlineToWrite())
@@ -69,7 +70,7 @@ func TestWithNonceGenerator(t *testing.T) {
 	nonceNum := 100
 
 	// when
-	cli := NewDefaultClient(credentials, WithNonceGenerator(nonceNum))
+	cli := NewDefaultClient(creds, WithNonceGenerator(nonceNum))
 
 	// then
 	assert.Equal(t, nonceNum, cli.GetNonceNumber())
@@ -80,7 +81,7 @@ func TestWithNonceGenerator_IncorrectNonceNumber(t *testing.T) {
 	nonceNum := 1
 
 	// when
-	cli := NewDefaultClient(credentials, WithNonceGenerator(nonceNum))
+	cli := NewDefaultClient(creds, WithNonceGenerator(nonceNum))
 
 	// then
 	assert.Equal(t, defaultNonceNumber, cli.GetNonceNumber())

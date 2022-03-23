@@ -1,4 +1,4 @@
-package main
+package powalgo
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -13,7 +13,7 @@ func TestPowAlgorithm(t *testing.T) {
 	repeatedNumber := 5
 
 	// when
-	str := hmacGenerator(password, salt, nonce, repeatedNumber)
+	str := HMACGenerator(password, salt, nonce, repeatedNumber)
 
 	// then
 	assert.NotEmpty(t, str)
@@ -26,7 +26,7 @@ func TestPowAlgorithm_PasswordIsEmpty(t *testing.T) {
 	repeatedNumber := 5
 
 	// when
-	str := hmacGenerator("", salt, nonce, repeatedNumber)
+	str := HMACGenerator("", salt, nonce, repeatedNumber)
 
 	// then
 	assert.NotEmpty(t, str)
@@ -39,7 +39,7 @@ func TestPowAlgorithm_SaltIsEmpty(t *testing.T) {
 	repeatedNumber := 5
 
 	// when
-	str := hmacGenerator(password, "", nonce, repeatedNumber)
+	str := HMACGenerator(password, "", nonce, repeatedNumber)
 
 	// then
 	assert.NotEmpty(t, str)
@@ -52,7 +52,7 @@ func TestPowAlgorithm_NonceIsEmpty(t *testing.T) {
 	repeatedNumber := 5
 
 	// when
-	str := hmacGenerator(password, salt, "", repeatedNumber)
+	str := HMACGenerator(password, salt, "", repeatedNumber)
 
 	// then
 	assert.NotEmpty(t, str)
@@ -66,7 +66,7 @@ func TestPowAlgorithm_RepeatedNumberIsLessThanZero(t *testing.T) {
 	nonce := "nonce"
 
 	// when
-	str := hmacGenerator(password, salt, nonce, repeatedNumber)
+	str := HMACGenerator(password, salt, nonce, repeatedNumber)
 
 	// then
 	assert.NotEmpty(t, str)

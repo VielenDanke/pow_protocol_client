@@ -1,4 +1,4 @@
-package main
+package credentials
 
 import (
 	"errors"
@@ -25,4 +25,12 @@ func BuildCredentialsFromEnv() (Credentials, error) {
 		return Credentials{}, ErrCredentialsAreEmpty
 	}
 	return Credentials{username: username, password: password}, nil
+}
+
+func (c Credentials) GetUsername() string {
+	return c.username
+}
+
+func (c Credentials) GetPassword() string {
+	return c.password
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/vielendanke/pow_protocol_client/client"
+	credentials2 "github.com/vielendanke/pow_protocol_client/credentials"
 	"log"
 	"net/http"
 	"os"
@@ -12,11 +14,11 @@ func main() {
 	if len(cliAddress) == 0 {
 		cliAddress = ":8090"
 	}
-	credentials, credentialsErr := BuildCredentialsFromEnv()
+	credentials, credentialsErr := credentials2.BuildCredentialsFromEnv()
 	if credentialsErr != nil {
 		log.Fatalln("ERROR: credentials for server cannot be empty")
 	}
-	cli := NewDefaultClient(credentials)
+	cli := client.NewDefaultClient(credentials)
 
 	http.HandleFunc("/ping", func(rw http.ResponseWriter, r *http.Request) {
 		addressTo := r.Header.Get("X-Redirect-To")
